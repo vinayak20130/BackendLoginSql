@@ -1,17 +1,18 @@
 const express = require("express");
 const dotenv = require("dotenv").config();
 const bodyParser = require("body-parser");
-const dbConnect = require("./config/database");
 const cors = require("cors");  // Import the CORS module
-
+const cleanUpExpiredOtps = require('./middlewares/cleanUpExpiredOtps');
+setInterval(cleanUpExpiredOtps, 300 * 1000);
+// const cleanUpExpiredOtps = require("./middlewares/cleanExpiredOtps")
+// const cleanUpExpiredOtps = require('./middlewares/cleanUpExpiredOtps');
 // Connect to MongoDB
-dbConnect();
-
 // Create an Express app
 const app = express();
-
+// setInterval(cleanUpExpiredOtps, 60 * 1000);
 // Enable CORS for all routes and origins
 app.use(cors());
+// setInterval(cleanUpExpiredOtps, 60 * 1000);
 
 // Alternatively, to enable CORS only for specific origin:
 // app.use(cors({

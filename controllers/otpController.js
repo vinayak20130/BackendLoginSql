@@ -1,60 +1,70 @@
-const Otp = require("../models/otp");
-const User = require("../models/User");
 const crypto = require("crypto");
 const transporter = require("../config/email");
+const pool = require("../config/database");
+const { toMySQLFormat, getISTTime } = require("../middlewares/timeConversion");
+require("dotenv").config();
 
-// Generate OTP
 exports.generateOtp = async (req, res) => {
   const { email } = req.body;
-
-  // Ensure the email is associated with a registered user
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
-  }
 
   // Generate a random 6-digit OTP
   const otp = crypto.randomInt(100000, 999999).toString();
 
-  // Save the OTP to the database
-  const otpDoc = new Otp({ email, otp });
-  await otpDoc.save();
+  // Set expiration time to 5 minutes from now in IST
+  const expiresAt = toMySQLFormat(new Date(Date.now() + 5 * 60 * 1000));
+  const createdAt = toMySQLFormat(new Date());
 
-  // Send the OTP via email
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Your OTP Code",
-    text: `Your OTP code is ${otp}`,
-  };
+  // Save or update the OTP in the database
+  const query = `
+    INSERT INTO otps (email, otp, created_at, expires_at)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE otp = VALUES(otp), expires_at = VALUES(expires_at)
+  `;
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      return res.status(500).json({ message: "Error sending OTP email" });
-    } else {
-      console.log("Email sent: " + info.response);
-      return res.status(201).json({
-        message: "OTP generated and sent via email",
-        status: "success",
-      });
-    }
-  });
+  try {
+    await pool.execute(query, [email, otp, createdAt, expiresAt]);
+
+    // Send the OTP via email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your OTP Code",
+      text: `Your OTP code is ${otp}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending OTP email:", error);
+        return res.status(500).json({ message: "Error sending OTP email" });
+      } else {
+        console.log("Email sent:", info.response);
+        return res.status(201).json({
+          message: "OTP generated and sent via email",
+          status: "success",
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error saving OTP:", err);
+    return res.status(500).json({ message: "Error saving OTP to database" });
+  }
 };
 
-// Verify OTP
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
-  const otpDoc = await Otp.findOne({ email, otp });
+  const query = `SELECT * FROM otps WHERE email = ? AND otp = ? AND expires_at > NOW() LIMIT 1`;
 
-  if (!otpDoc) {
-    return res.status(400).json({ message: "Invalid or expired OTP", status: 400  });
+  try {
+    const [results] = await pool.execute(query, [email, otp]);
+
+    if (results.length > 0) {
+      return res.status(200).json({ message: "OTP verified successfully" });
+    } else {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+  } catch (err) {
+    console.error("Error verifying OTP:", err);
+    return res.status(500).json({ message: "Error verifying OTP" });
   }
-
-  // OTP is valid
-  res.status(200).json({ message: "OTP verified", status: 200 });
-
-  // Optionally, delete the OTP after verification
-  await Otp.deleteOne({ _id: otpDoc._id });
 };
