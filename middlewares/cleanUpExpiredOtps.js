@@ -2,7 +2,7 @@ const pool = require('../config/database'); // Adjust path as necessary
 const { toMySQLFormat, getISTTime } = require("../middlewares/timeConversion");
 
 const cleanUpExpiredOtps = async () => {
-  const query = `DELETE FROM otps WHERE expires_at > NOW()`;
+  const query = `DELETE FROM EmailVerifications WHERE expires_at > NOW()`;
   
   try {
     const [results] = await pool.execute(query);

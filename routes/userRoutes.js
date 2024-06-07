@@ -1,6 +1,7 @@
 const express = require("express");
 const { login, changePassword } = require("../controllers/userController");
 const { generateOtp, verifyOtp } = require("../controllers/otpController");
+const { generateOtpForExistingUsers , verifyOtpForExisting } = require("../controllers/otpControllerForExistingUsers");
 const {
   createUser,
   editUser,
@@ -23,4 +24,6 @@ router.get("/getAllUsers", getAllUsers);
 // OTP Routes
 router.post("/sendOtp", generateOtp);
 router.post("/checkOtp", verifyOtp);
+router.post("/sendOtpForExisting", generateOtpForExistingUsers);
+router.post("/checkOtpForExisting", verifyOtpForExisting);
 module.exports = router;

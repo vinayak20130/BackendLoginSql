@@ -16,7 +16,7 @@ exports.generateOtp = async (req, res) => {
 
   // Save or update the OTP in the database
   const query = `
-    INSERT INTO otps (email, otp, created_at, expires_at)
+    INSERT INTO EmailVerifications (email, otp, created_at, expires_at)
     VALUES (?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE otp = VALUES(otp), expires_at = VALUES(expires_at)
   `;
@@ -53,13 +53,16 @@ exports.generateOtp = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
-  const query = `SELECT * FROM otps WHERE email = ? AND otp = ? AND expires_at > NOW() LIMIT 1`;
+  const selectQuery = `SELECT * FROM EmailVerifications WHERE email = ? AND otp = ? AND expires_at > NOW() LIMIT 1`;
+  const deleteQuery = `DELETE FROM EmailVerifications WHERE email = ? AND otp = ?`;
 
   try {
-    const [results] = await pool.execute(query, [email, otp]);
+    const [results] = await pool.execute(selectQuery, [email, otp]);
 
     if (results.length > 0) {
-      return res.status(200).json({ message: "OTP verified successfully" });
+      // If OTP is verified, delete the entry
+      await pool.execute(deleteQuery, [email, otp]);
+      return res.status(200).json({ message: "OTP verified and entry deleted successfully" });
     } else {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
@@ -68,3 +71,4 @@ exports.verifyOtp = async (req, res) => {
     return res.status(500).json({ message: "Error verifying OTP" });
   }
 };
+
