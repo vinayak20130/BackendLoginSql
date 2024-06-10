@@ -2,6 +2,7 @@ const express = require("express");
 const { login, changePassword } = require("../controllers/userController");
 const { generateOtp, verifyOtp } = require("../controllers/otpController");
 const { generateOtpForExistingUsers , verifyOtpForExisting } = require("../controllers/otpControllerForExistingUsers");
+const { getAnalyticsData } = require("../controllers/sendTest");
 const {
   createUser,
   editUser,
@@ -26,4 +27,8 @@ router.post("/sendOtp", generateOtp);
 router.post("/checkOtp", verifyOtp);
 router.post("/sendOtpForExisting", generateOtpForExistingUsers);
 router.post("/checkOtpForExisting", verifyOtpForExisting);
+
+//test routes
+router.get("/ARTrainingDeployed", getAnalyticsData);
+
 module.exports = router;

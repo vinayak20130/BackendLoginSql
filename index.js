@@ -2,8 +2,8 @@ const express = require("express");
 const dotenv = require("dotenv").config();
 const bodyParser = require("body-parser");
 const cors = require("cors");  // Import the CORS module
-const cleanUpExpiredOtps = require('./middlewares/cleanUpExpiredOtps');
-setInterval(cleanUpExpiredOtps, 300 * 1000);
+// const cleanUpExpiredOtps = require('./middlewares/cleanUpExpiredOtps');
+// setInterval(cleanUpExpiredOtps, 240000 * 1000);
 // const cleanUpExpiredOtps = require("./middlewares/cleanExpiredOtps")
 // const cleanUpExpiredOtps = require('./middlewares/cleanUpExpiredOtps');
 // Connect to MongoDB
