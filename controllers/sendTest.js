@@ -12,7 +12,7 @@ exports.getAnalyticsData = async (req, res) => {
             totalUseCase: totalUseCaseResult[0].totalValue,
             totalSessionTime: totalSessionTimeResult[0].totalValue,
             locationCount: locationResult[0].totalValue,
-            topPlant: topPlantResult[0].PlantName
+            topPlant: topPlantResult,
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
